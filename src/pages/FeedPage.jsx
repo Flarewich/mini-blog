@@ -2,9 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import PostCard from "../components/PostCard";
 import { useToast } from "../context/ToastContext";
+import { useUi } from "../context/UiContext";
+import Hero from "../components/Hero";
 
 export default function FeedPage() {
   const { showToast } = useToast();
+  const { t } = useUi();
 
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -31,30 +34,21 @@ export default function FeedPage() {
   useEffect(() => {
     loadPosts();
 
-    // Realtime: при любом изменении в posts/comments/post_likes — “подтянуть” ленту (с debounce)
     const channel = supabase
       .channel("realtime-mini-blog")
       .on("postgres_changes", { event: "*", schema: "public", table: "posts" }, () => debounceReload())
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "comments" },
-        () => debounceReload()
+      .on("postgres_changes", { event: "*", schema: "public", table: "comments" }, () =>
+        debounceReload()
       )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "post_likes" },
-        () => debounceReload()
+      .on("postgres_changes", { event: "*", schema: "public", table: "post_likes" }, () =>
+        debounceReload()
       )
-      .subscribe((status) => {
-        if (status === "SUBSCRIBED") {
-          // showToast("Realtime включён.", "success"); // можно включить если хочешь
-        }
-      });
+      .subscribe();
 
     function debounceReload() {
       if (reloadTimer.current) clearTimeout(reloadTimer.current);
       reloadTimer.current = setTimeout(() => {
-        loadPosts().catch((e) => showToast(e.message || "Ошибка обновления", "error"));
+        loadPosts().catch((e) => showToast(e.message || t("errorUpdate"), "error"));
       }, 400);
     }
 
@@ -66,7 +60,7 @@ export default function FeedPage() {
   }, []);
 
   async function handleDelete(id) {
-    const ok = confirm("Удалить пост?");
+    const ok = confirm(t("deletePostConfirm"));
     if (!ok) return;
 
     const { error } = await supabase.from("posts").delete().eq("id", id);
@@ -79,26 +73,28 @@ export default function FeedPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div>
+      <Hero />
+
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold">Все посты</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight">{t("allPosts")}</h1>
         <button
           onClick={loadPosts}
-          className="px-3 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-sm"
+          className="px-3 py-2 rounded-2xl bg-gray-100 dark:bg-gray-900/50 hover:bg-gray-200 dark:hover:bg-gray-900 text-sm border border-gray-200 dark:border-gray-800"
         >
-          Обновить
+          {t("refresh")}
         </button>
       </div>
 
-      {loading && <p className="mt-6 text-gray-600">Загрузка...</p>}
+      {loading && <p className="mt-6 text-gray-600 dark:text-gray-300">{t("loading")}</p>}
       {errorMsg && (
-        <p className="mt-6 text-red-700 bg-red-50 border border-red-200 rounded-xl p-3">
+        <p className="mt-6 text-red-700 bg-red-50 border border-red-200 rounded-2xl p-3">
           {errorMsg}
         </p>
       )}
 
       {!loading && !errorMsg && posts.length === 0 && (
-        <p className="mt-6 text-gray-600">Постов пока нет. Создай первый 🙂</p>
+        <p className="mt-6 text-gray-600 dark:text-gray-300">{t("noPosts")}</p>
       )}
 
       <div className="mt-6 space-y-4">

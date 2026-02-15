@@ -4,9 +4,11 @@ import LikeButton from "./LikeButton";
 import Comments from "./Comments";
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { useUi } from "../context/UiContext";
 
 export default function PostCard({ post, onDelete }) {
   const { user } = useAuth();
+  const { t } = useUi();
   const isOwner = user?.id === post.user_id;
 
   const [likedByMe, setLikedByMe] = useState(false);
@@ -14,7 +16,6 @@ export default function PostCard({ post, onDelete }) {
   const [showComments, setShowComments] = useState(false);
 
   async function loadLikes() {
-    // count лайков
     const { count, error: countErr } = await supabase
       .from("post_likes")
       .select("*", { count: "exact", head: true })
@@ -22,7 +23,6 @@ export default function PostCard({ post, onDelete }) {
 
     if (!countErr) setLikesCount(count || 0);
 
-    // likedByMe
     if (user) {
       const { data, error } = await supabase
         .from("post_likes")
@@ -43,34 +43,32 @@ export default function PostCard({ post, onDelete }) {
   }, [post.id, user?.id]);
 
   return (
-    <article className="bg-white border rounded-2xl p-4 shadow-sm">
+    <article className="bg-white/80 dark:bg-gray-900/60 border border-gray-200/70 dark:border-gray-800/70 rounded-3xl p-5 shadow-sm hover:shadow-md">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold">{post.title}</h2>
-          <p className="text-xs text-gray-500 mt-1">
-            {new Date(post.created_at).toLocaleString()}
-          </p>
+          <p className="text-xs text-gray-500 mt-1">{new Date(post.created_at).toLocaleString()}</p>
         </div>
 
         {isOwner && (
           <div className="flex gap-2">
             <Link
               to={`/edit/${post.id}`}
-              className="px-3 py-2 text-sm rounded-lg bg-gray-900 text-white hover:bg-black"
+              className="px-3 py-2 text-sm rounded-2xl bg-gray-900 text-white hover:bg-black dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
             >
-              Редактировать
+              {t("edit")}
             </Link>
             <button
               onClick={() => onDelete?.(post.id)}
-              className="px-3 py-2 text-sm rounded-lg bg-gray-100 hover:bg-gray-200"
+              className="px-3 py-2 text-sm rounded-2xl bg-gray-100 dark:bg-gray-900/50 hover:bg-gray-200 dark:hover:bg-gray-900 border border-gray-200 dark:border-gray-800"
             >
-              Удалить
+              {t("delete")}
             </button>
           </div>
         )}
       </div>
 
-      <p className="text-gray-800 mt-3 whitespace-pre-wrap">{post.content}</p>
+      <p className="text-gray-800 dark:text-gray-100 mt-3 whitespace-pre-wrap">{post.content}</p>
 
       <div className="mt-4 flex items-center gap-2">
         <LikeButton
@@ -85,9 +83,9 @@ export default function PostCard({ post, onDelete }) {
 
         <button
           onClick={() => setShowComments((v) => !v)}
-          className="px-3 py-2 rounded-xl text-sm border bg-white hover:bg-gray-50"
+          className="px-3 py-2 rounded-xl text-sm border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-900/50 hover:bg-gray-50 dark:hover:bg-gray-900"
         >
-          💬 Комментарии
+          💬 {t("commentsBtn")}
         </button>
       </div>
 

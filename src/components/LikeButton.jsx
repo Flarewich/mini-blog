@@ -1,14 +1,16 @@
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
+import { useUi } from "../context/UiContext";
 
 export default function LikeButton({ postId, likedByMe, likesCount, onChanged }) {
   const { user } = useAuth();
   const { showToast } = useToast();
+  const { t } = useUi();
 
   async function toggleLike() {
     if (!user) {
-      showToast("Войди, чтобы ставить лайки.", "error");
+      showToast(t("likeLoginRequired"), "error");
       return;
     }
 
@@ -30,7 +32,7 @@ export default function LikeButton({ postId, likedByMe, likesCount, onChanged })
         onChanged?.({ liked: true });
       }
     } catch (err) {
-      showToast(err.message || "Ошибка лайка", "error");
+      showToast(err.message || "Error", "error");
     }
   }
 
@@ -38,8 +40,10 @@ export default function LikeButton({ postId, likedByMe, likesCount, onChanged })
     <button
       onClick={toggleLike}
       className={
-        "px-3 py-2 rounded-xl text-sm border " +
-        (likedByMe ? "bg-gray-900 text-white border-gray-900" : "bg-white hover:bg-gray-50")
+        "px-3 py-2 rounded-xl text-sm border border-gray-200 dark:border-gray-800 " +
+        (likedByMe
+          ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900"
+          : "bg-white/70 dark:bg-gray-900/50 hover:bg-gray-50 dark:hover:bg-gray-900")
       }
     >
       ❤️ {likesCount}
