@@ -7,7 +7,7 @@ export default function NotFound() {
   return (
     <div className="max-w-2xl mx-auto py-12">
       <h1 className="text-3xl font-extrabold tracking-tight">{t("notFoundTitle")}</h1>
-      <p className="text-gray-600 dark:text-gray-300 mt-2">{t("notFoundText")}</p>
+      <p className="text-zinc-600 dark:text-zinc-300 mt-2">{t("notFoundText")}</p>
       <Link className="inline-block mt-4 underline" to="/">
         {t("backHome")}
       </Link>

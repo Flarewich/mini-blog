@@ -51,17 +51,17 @@ export default function AuthPage() {
       <h1 className="text-3xl font-extrabold tracking-tight">
         {mode === "login" ? t("authLoginTitle") : t("authSignupTitle")}
       </h1>
-      <p className="text-gray-600 dark:text-gray-300 mt-1">{t("authSubtitle")}</p>
+      <p className="text-zinc-600 dark:text-zinc-300 mt-1">{t("authSubtitle")}</p>
 
-      <div className="mt-6 bg-white/80 dark:bg-gray-900/60 border border-gray-200/70 dark:border-gray-800/70 rounded-3xl p-5 shadow-sm">
+      <div className="mt-6 bg-white/80 dark:bg-zinc-900/60 border border-zinc-200/70 dark:border-zinc-800/70 rounded-3xl p-5 shadow-sm">
         <form onSubmit={handleAuth} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
               {t("emailLabel")}
             </label>
             <input
               type="email"
-              className="mt-1 w-full border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-950/40 rounded-2xl px-3 py-2 outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white"
+              className="mt-1 w-full border border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-950/40 rounded-2xl px-3 py-2 outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -69,12 +69,12 @@ export default function AuthPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
               {t("passwordLabel")}
             </label>
             <input
               type="password"
-              className="mt-1 w-full border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-950/40 rounded-2xl px-3 py-2 outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white"
+              className="mt-1 w-full border border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-950/40 rounded-2xl px-3 py-2 outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -84,7 +84,7 @@ export default function AuthPage() {
 
           <button
             disabled={loading || cooldown > 0}
-            className="w-full px-4 py-2 rounded-2xl bg-gray-900 text-white hover:bg-black disabled:opacity-60 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
+            className="w-full px-4 py-2 rounded-2xl bg-zinc-900 text-white hover:bg-black disabled:opacity-60 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100"
           >
             {loading
               ? t("waitBtn")
@@ -96,7 +96,7 @@ export default function AuthPage() {
           </button>
 
           {msg && (
-            <p className="text-sm text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-gray-950/40 border border-gray-200 dark:border-gray-800 rounded-2xl p-3">
+            <p className="text-sm text-zinc-700 dark:text-zinc-200 bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-3">
               {msg}
             </p>
           )}

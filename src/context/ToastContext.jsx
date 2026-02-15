@@ -29,7 +29,7 @@ export function ToastProvider({ children }) {
                 ? "border-red-200"
                 : t.type === "success"
                   ? "border-green-200"
-                  : "border-gray-200")
+                  : "border-zinc-200")
             }
           >
             {t.message}

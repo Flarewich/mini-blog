@@ -54,7 +54,8 @@ const dict = {
     waitBtn: "Подожди...",
     noAccount: "Нет аккаунта? Зарегистрироваться",
     haveAccount: "Уже есть аккаунт? Войти",
-    signupSuccess: "Аккаунт создан. Проверь почту (если включено подтверждение) или войди.",
+    signupSuccess:
+      "Аккаунт создан. Проверь почту (если включено подтверждение) или войди.",
     repeatIn: "Можно повторить через {s}с",
 
     // profile
@@ -136,7 +137,8 @@ const dict = {
     waitBtn: "Зачекай...",
     noAccount: "Немає акаунта? Зареєструватися",
     haveAccount: "Вже є акаунт? Увійти",
-    signupSuccess: "Акаунт створено. Перевір пошту (якщо ввімкнене підтвердження) або увійди.",
+    signupSuccess:
+      "Акаунт створено. Перевір пошту (якщо ввімкнене підтвердження) або увійди.",
     repeatIn: "Можна повторити через {s}с",
 
     avatar: "Аватар",
@@ -214,7 +216,8 @@ const dict = {
     waitBtn: "Please wait...",
     noAccount: "No account? Sign up",
     haveAccount: "Already have an account? Login",
-    signupSuccess: "Account created. Check your email (if confirmation is enabled) or log in.",
+    signupSuccess:
+      "Account created. Check your email (if confirmation is enabled) or log in.",
     repeatIn: "Try again in {s}s",
 
     avatar: "Avatar",
@@ -257,11 +260,12 @@ export function UiProvider({ children }) {
   useEffect(() => {
     localStorage.setItem("theme", theme);
     const root = document.documentElement;
+
+    // ⬅️ ВАЖНО: оставляем только Tailwind dark
     if (theme === "dark") root.classList.add("dark");
     else root.classList.remove("dark");
   }, [theme]);
 
-  // t(key, {var}) поддерживает шаблоны вида "Через {s}с"
   function t(key, vars) {
     const str = dict[lang]?.[key] ?? dict.ru[key] ?? key;
     if (!vars) return str;

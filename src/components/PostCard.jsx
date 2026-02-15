@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { useUi } from "../context/UiContext";
 
-export default function PostCard({ post, onDelete }) {
+export default function PostCard({ post, onDelete, author }) {
   const { user } = useAuth();
   const { t } = useUi();
   const isOwner = user?.id === post.user_id;
@@ -14,6 +14,12 @@ export default function PostCard({ post, onDelete }) {
   const [likedByMe, setLikedByMe] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
   const [showComments, setShowComments] = useState(false);
+
+  const avatarUrl = author?.avatar_path
+    ? supabase.storage.from("avatars").getPublicUrl(author.avatar_path).data.publicUrl
+    : null;
+
+  const authorName = author?.full_name || author?.username || "User";
 
   async function loadLikes() {
     const { count, error: countErr } = await supabase
@@ -43,24 +49,44 @@ export default function PostCard({ post, onDelete }) {
   }, [post.id, user?.id]);
 
   return (
-    <article className="bg-white/80 dark:bg-gray-900/60 border border-gray-200/70 dark:border-gray-800/70 rounded-3xl p-5 shadow-sm hover:shadow-md">
+    <article className="bg-white/80 dark:bg-zinc-900/60 border border-zinc-200/70 dark:border-zinc-800/70 rounded-3xl p-5 shadow-sm hover:shadow-md">
       <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold">{post.title}</h2>
-          <p className="text-xs text-gray-500 mt-1">{new Date(post.created_at).toLocaleString()}</p>
+        {/* Author block */}
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-950/40 overflow-hidden flex items-center justify-center">
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-xs text-zinc-500">🙂</span>
+            )}
+          </div>
+
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-semibold text-sm truncate">{authorName}</span>
+              {author?.username ? (
+                <span className="text-xs text-zinc-500 truncate">@{author.username}</span>
+              ) : null}
+            </div>
+
+            <p className="text-xs text-zinc-500 mt-0.5">{new Date(post.created_at).toLocaleString()}</p>
+
+            <h2 className="text-lg font-semibold mt-2">{post.title}</h2>
+          </div>
         </div>
 
+        {/* Owner actions */}
         {isOwner && (
           <div className="flex gap-2">
             <Link
               to={`/edit/${post.id}`}
-              className="px-3 py-2 text-sm rounded-2xl bg-gray-900 text-white hover:bg-black dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
+              className="px-3 py-2 text-sm rounded-2xl bg-zinc-900 text-white hover:bg-black dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100"
             >
               {t("edit")}
             </Link>
             <button
               onClick={() => onDelete?.(post.id)}
-              className="px-3 py-2 text-sm rounded-2xl bg-gray-100 dark:bg-gray-900/50 hover:bg-gray-200 dark:hover:bg-gray-900 border border-gray-200 dark:border-gray-800"
+              className="px-3 py-2 text-sm rounded-2xl bg-zinc-100 dark:bg-zinc-900/50 hover:bg-zinc-200 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800"
             >
               {t("delete")}
             </button>
@@ -68,8 +94,10 @@ export default function PostCard({ post, onDelete }) {
         )}
       </div>
 
-      <p className="text-gray-800 dark:text-gray-100 mt-3 whitespace-pre-wrap">{post.content}</p>
+      {/* Content */}
+      <p className="text-zinc-800 dark:text-zinc-100 mt-3 whitespace-pre-wrap">{post.content}</p>
 
+      {/* Actions */}
       <div className="mt-4 flex items-center gap-2">
         <LikeButton
           postId={post.id}
@@ -83,7 +111,7 @@ export default function PostCard({ post, onDelete }) {
 
         <button
           onClick={() => setShowComments((v) => !v)}
-          className="px-3 py-2 rounded-xl text-sm border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-900/50 hover:bg-gray-50 dark:hover:bg-gray-900"
+          className="px-3 py-2 rounded-xl text-sm border border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/50 hover:bg-zinc-50 dark:hover:bg-zinc-900"
         >
           💬 {t("commentsBtn")}
         </button>

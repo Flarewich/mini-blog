@@ -44,17 +44,17 @@ export default function AvatarUploader({ userId, currentAvatarUrl, onUploaded })
 
   return (
     <div className="flex items-center gap-4">
-      <div className="w-16 h-16 rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-100 dark:bg-gray-950/40 overflow-hidden flex items-center justify-center">
+      <div className="w-16 h-16 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-950/40 overflow-hidden flex items-center justify-center">
         {currentAvatarUrl ? (
           <img src={currentAvatarUrl} alt="avatar" className="w-full h-full object-cover" />
         ) : (
-          <span className="text-xs text-gray-500">{t("noAvatar")}</span>
+          <span className="text-xs text-zinc-500">{t("noAvatar")}</span>
         )}
       </div>
 
       <label className="inline-block">
         <input type="file" accept="image/*" onChange={handleFile} className="hidden" />
-        <span className="px-3 py-2 rounded-2xl bg-gray-900 text-white text-sm hover:bg-black cursor-pointer inline-block dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100">
+        <span className="px-3 py-2 rounded-2xl bg-zinc-900 text-white text-sm hover:bg-black cursor-pointer inline-block dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100">
           {loading ? t("loading") : t("uploadAvatar")}
         </span>
       </label>

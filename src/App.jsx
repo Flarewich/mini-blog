@@ -9,7 +9,11 @@ import ProtectedRoute from "./components/ProtectedRoute";
 
 export default function App() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-950 dark:to-gray-950 text-gray-900 dark:text-gray-100">
+    <div
+      className="min-h-screen bg-gradient-to-b 
+      from-zinc-200 to-zinc-400 
+      dark:from-zinc-900 dark:to-black 
+      text-zinc-900 dark:text-zinc-100">
       <Navbar />
       <main className="max-w-5xl mx-auto px-4 py-8">
         <Routes>

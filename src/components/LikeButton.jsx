@@ -40,10 +40,10 @@ export default function LikeButton({ postId, likedByMe, likesCount, onChanged })
     <button
       onClick={toggleLike}
       className={
-        "px-3 py-2 rounded-xl text-sm border border-gray-200 dark:border-gray-800 " +
+        "px-3 py-2 rounded-xl text-sm border border-zinc-200 dark:border-zinc-800 " +
         (likedByMe
-          ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900"
-          : "bg-white/70 dark:bg-gray-900/50 hover:bg-gray-50 dark:hover:bg-gray-900")
+          ? "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900"
+          : "bg-white/70 dark:bg-zinc-900/50 hover:bg-zinc-50 dark:hover:bg-zinc-900")
       }
     >
       ❤️ {likesCount}

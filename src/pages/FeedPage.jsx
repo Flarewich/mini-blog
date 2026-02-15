@@ -4,12 +4,16 @@ import PostCard from "../components/PostCard";
 import { useToast } from "../context/ToastContext";
 import { useUi } from "../context/UiContext";
 import Hero from "../components/Hero";
+import { fetchPublicProfiles } from "../lib/publicProfiles";
+import { useConfirm } from "../context/ConfirmContext";
 
 export default function FeedPage() {
   const { showToast } = useToast();
   const { t } = useUi();
+  const { confirm } = useConfirm();
 
   const [posts, setPosts] = useState([]);
+  const [profiles, setProfiles] = useState(new Map());
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
   const reloadTimer = useRef(null);
@@ -27,6 +31,14 @@ export default function FeedPage() {
       setErrorMsg(error.message);
     } else {
       setPosts(data || []);
+
+      const authorIds = (data || []).map((p) => p.user_id);
+      try {
+        const map = await fetchPublicProfiles(authorIds);
+        setProfiles(map);
+      } catch {
+        // ignore
+      }
     }
     setLoading(false);
   }
@@ -37,12 +49,8 @@ export default function FeedPage() {
     const channel = supabase
       .channel("realtime-mini-blog")
       .on("postgres_changes", { event: "*", schema: "public", table: "posts" }, () => debounceReload())
-      .on("postgres_changes", { event: "*", schema: "public", table: "comments" }, () =>
-        debounceReload()
-      )
-      .on("postgres_changes", { event: "*", schema: "public", table: "post_likes" }, () =>
-        debounceReload()
-      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "comments" }, () => debounceReload())
+      .on("postgres_changes", { event: "*", schema: "public", table: "post_likes" }, () => debounceReload())
       .subscribe();
 
     function debounceReload() {
@@ -60,14 +68,17 @@ export default function FeedPage() {
   }, []);
 
   async function handleDelete(id) {
-    const ok = confirm(t("deletePostConfirm"));
+    const ok = await confirm({
+      title: t("delete"),
+      message: t("deletePostConfirm"),
+      confirmText: t("delete"),
+      cancelText: "Cancel",
+      danger: true,
+    });
     if (!ok) return;
 
     const { error } = await supabase.from("posts").delete().eq("id", id);
-    if (error) {
-      alert(error.message);
-      return;
-    }
+    if (error) return showToast(error.message, "error");
 
     setPosts((prev) => prev.filter((p) => p.id !== id));
   }
@@ -78,30 +89,33 @@ export default function FeedPage() {
 
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-3xl font-extrabold tracking-tight">{t("allPosts")}</h1>
-        <button
-          onClick={loadPosts}
-          className="px-3 py-2 rounded-2xl bg-gray-100 dark:bg-gray-900/50 hover:bg-gray-200 dark:hover:bg-gray-900 text-sm border border-gray-200 dark:border-gray-800"
-        >
+
+        <button onClick={loadPosts} className="px-3 py-2 rounded-2xl text-sm btn-soft">
           {t("refresh")}
         </button>
       </div>
 
-      {loading && <p className="mt-6 text-gray-600 dark:text-gray-300">{t("loading")}</p>}
+      {loading && <p className="mt-6 muted">{t("loading")}</p>}
+
       {errorMsg && (
-        <p className="mt-6 text-red-700 bg-red-50 border border-red-200 rounded-2xl p-3">
+        <p className="mt-6 card rounded-2xl p-3" style={{ borderColor: "color-mix(in srgb, red 25%, var(--border))" }}>
           {errorMsg}
         </p>
       )}
 
-      {!loading && !errorMsg && posts.length === 0 && (
-        <p className="mt-6 text-gray-600 dark:text-gray-300">{t("noPosts")}</p>
-      )}
+      {!loading && !errorMsg && posts.length === 0 && <p className="mt-6 muted">{t("noPosts")}</p>}
 
       <div className="mt-6 space-y-4">
         {posts.map((post) => (
-          <PostCard key={post.id} post={post} onDelete={handleDelete} />
+          <PostCard
+            key={post.id}
+            post={post}
+            onDelete={handleDelete}
+            author={profiles.get(post.user_id)}
+          />
         ))}
       </div>
     </div>
   );
 }
+

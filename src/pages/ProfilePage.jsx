@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
+import { useUi } from "../context/UiContext";
+import { supabase } from "../lib/supabase";
 import { getAvatarPublicUrl, getMyProfile, updateMyProfile } from "../lib/profile";
 import AvatarUploader from "../components/AvatarUploader";
-import { useUi } from "../context/UiContext";
+import ProfileHeader from "../components/ProfileHeader";
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -11,14 +13,56 @@ export default function ProfilePage() {
   const { t } = useUi();
 
   const [profile, setProfile] = useState(null);
+
   const [avatarUrl, setAvatarUrl] = useState(null);
+  const [coverUrl, setCoverUrl] = useState(null);
+
   const [saving, setSaving] = useState(false);
+  const [stats, setStats] = useState({ posts: 0, likes: 0, comments: 0 });
 
   async function load() {
     try {
       const p = await getMyProfile(user.id);
       setProfile(p);
+
+      // avatar url
       setAvatarUrl(getAvatarPublicUrl(p.avatar_path));
+
+      // cover url (bucket covers)
+      const cover = p.cover_path
+        ? supabase.storage.from("covers").getPublicUrl(p.cover_path).data.publicUrl
+        : null;
+      setCoverUrl(cover);
+
+      // posts count
+      const { count: postsCount, error: postsErr } = await supabase
+        .from("posts")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id);
+
+      if (postsErr) throw postsErr;
+
+      // likes count (сколько лайков поставил пользователь)
+      const { count: likesCount, error: likesErr } = await supabase
+        .from("post_likes")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id);
+
+      if (likesErr) throw likesErr;
+
+      // comments count
+      const { count: commentsCount, error: commentsErr } = await supabase
+        .from("comments")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id);
+
+      if (commentsErr) throw commentsErr;
+
+      setStats({
+        posts: postsCount || 0,
+        likes: likesCount || 0,
+        comments: commentsCount || 0,
+      });
     } catch (err) {
       showToast(err.message || t("profileLoadError"), "error");
     }
@@ -40,6 +84,7 @@ export default function ProfilePage() {
         full_name: profile.full_name?.trim() || null,
         website: profile.website?.trim() || null,
       });
+
       setProfile(updated);
       showToast(t("profileSaved"), "success");
     } catch (err) {
@@ -59,22 +104,50 @@ export default function ProfilePage() {
     }
   }
 
+  async function onCoverUploaded(filePath) {
+    try {
+      const updated = await updateMyProfile(user.id, { cover_path: filePath });
+      setProfile(updated);
+
+      const url = updated.cover_path
+        ? supabase.storage.from("covers").getPublicUrl(updated.cover_path).data.publicUrl
+        : null;
+
+      setCoverUrl(url);
+      showToast("Обложка обновлена.", "success");
+    } catch (err) {
+      showToast(err.message || "Не удалось привязать обложку", "error");
+    }
+  }
+
   if (!profile) {
     return (
       <div className="max-w-2xl mx-auto">
         <h1 className="text-3xl font-extrabold tracking-tight">{t("profile")}</h1>
-        <p className="mt-4 text-gray-600 dark:text-gray-300">{t("loading")}</p>
+        <p className="mt-4 text-zinc-600 dark:text-zinc-300">{t("loading")}</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-2xl mx-auto space-y-6">
       <h1 className="text-3xl font-extrabold tracking-tight">{t("profile")}</h1>
 
-      <div className="mt-6 bg-white/80 dark:bg-gray-900/60 border border-gray-200/70 dark:border-gray-800/70 rounded-3xl p-5 shadow-sm space-y-6">
+      {/* Social header with editable cover */}
+      <ProfileHeader
+        profile={profile}
+        avatarUrl={avatarUrl}
+        coverUrl={coverUrl}
+        userId={user.id}
+        onCoverUploaded={onCoverUploaded}
+        stats={stats}
+        t={t}
+      />
+
+      {/* Edit profile card */}
+      <div className="bg-white/80 dark:bg-zinc-900/60 border border-zinc-200/70 dark:border-zinc-800/70 rounded-3xl p-5 shadow-sm space-y-6">
         <div>
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">{t("avatar")}</p>
+          <p className="text-sm font-medium text-zinc-700 dark:text-zinc-200 mb-2">{t("avatar")}</p>
           <AvatarUploader
             userId={user.id}
             currentAvatarUrl={avatarUrl}
@@ -84,39 +157,39 @@ export default function ProfilePage() {
 
         <form onSubmit={saveProfile} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
               {t("username")}
             </label>
             <input
               value={profile.username ?? ""}
               onChange={(e) => setProfile((p) => ({ ...p, username: e.target.value }))}
-              className="mt-1 w-full border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-950/40 rounded-2xl px-3 py-2 outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white"
+              className="mt-1 w-full border border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-950/40 rounded-2xl px-3 py-2 outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white"
               placeholder="e.g. flarewich"
               maxLength={32}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
               {t("fullName")}
             </label>
             <input
               value={profile.full_name ?? ""}
               onChange={(e) => setProfile((p) => ({ ...p, full_name: e.target.value }))}
-              className="mt-1 w-full border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-950/40 rounded-2xl px-3 py-2 outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white"
+              className="mt-1 w-full border border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-950/40 rounded-2xl px-3 py-2 outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white"
               placeholder="John Doe"
               maxLength={80}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
               {t("website")}
             </label>
             <input
               value={profile.website ?? ""}
               onChange={(e) => setProfile((p) => ({ ...p, website: e.target.value }))}
-              className="mt-1 w-full border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-950/40 rounded-2xl px-3 py-2 outline-none focus:ring-2 focus:ring-gray-900 dark:focus:ring-white"
+              className="mt-1 w-full border border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-950/40 rounded-2xl px-3 py-2 outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-white"
               placeholder="https://..."
               maxLength={120}
             />
@@ -124,15 +197,12 @@ export default function ProfilePage() {
 
           <button
             disabled={saving}
-            className="px-4 py-2 rounded-2xl bg-gray-900 text-white hover:bg-black disabled:opacity-60 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
+            className="px-4 py-2 rounded-2xl bg-zinc-900 text-white hover:bg-black disabled:opacity-60 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100"
           >
             {saving ? t("saving") : t("save")}
           </button>
 
-          <div className="text-xs text-gray-500">
-            <div>Email: {user.email}</div>
-            <div className="break-all">ID: {user.id}</div>
-          </div>
+         
         </form>
       </div>
     </div>
