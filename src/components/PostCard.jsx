@@ -16,7 +16,8 @@ export default function PostCard({ post, onDelete, author }) {
   const [showComments, setShowComments] = useState(false);
 
   const avatarUrl = author?.avatar_path
-    ? supabase.storage.from("avatars").getPublicUrl(author.avatar_path).data.publicUrl
+    ? supabase.storage.from("avatars").getPublicUrl(author.avatar_path).data
+        .publicUrl
     : null;
 
   const authorName = author?.full_name || author?.username || "User";
@@ -52,10 +53,21 @@ export default function PostCard({ post, onDelete, author }) {
     <article className="bg-white/80 dark:bg-zinc-900/60 border border-zinc-200/70 dark:border-zinc-800/70 rounded-3xl p-5 shadow-sm hover:shadow-md">
       <div className="flex items-start justify-between gap-4">
         {/* Author block */}
-        <div className="flex items-start gap-3">
+        {/* Author block */}
+        <Link
+          to={author?.username ? `/u/${author.username}` : "#"}
+          className="flex items-start gap-3 hover:opacity-90"
+          onClick={(e) => {
+            if (!author?.username) e.preventDefault();
+          }}
+        >
           <div className="w-10 h-10 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-950/40 overflow-hidden flex items-center justify-center">
             {avatarUrl ? (
-              <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
+              <img
+                src={avatarUrl}
+                alt="avatar"
+                className="w-full h-full object-cover"
+              />
             ) : (
               <span className="text-xs text-zinc-500">🙂</span>
             )}
@@ -63,17 +75,23 @@ export default function PostCard({ post, onDelete, author }) {
 
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-semibold text-sm truncate">{authorName}</span>
+              <span className="font-semibold text-sm truncate">
+                {authorName}
+              </span>
               {author?.username ? (
-                <span className="text-xs text-zinc-500 truncate">@{author.username}</span>
+                <span className="text-xs text-zinc-500 truncate">
+                  @{author.username}
+                </span>
               ) : null}
             </div>
 
-            <p className="text-xs text-zinc-500 mt-0.5">{new Date(post.created_at).toLocaleString()}</p>
+            <p className="text-xs text-zinc-500 mt-0.5">
+              {new Date(post.created_at).toLocaleString()}
+            </p>
 
             <h2 className="text-lg font-semibold mt-2">{post.title}</h2>
           </div>
-        </div>
+        </Link>
 
         {/* Owner actions */}
         {isOwner && (
@@ -95,7 +113,9 @@ export default function PostCard({ post, onDelete, author }) {
       </div>
 
       {/* Content */}
-      <p className="text-zinc-800 dark:text-zinc-100 mt-3 whitespace-pre-wrap">{post.content}</p>
+      <p className="text-zinc-800 dark:text-zinc-100 mt-3 whitespace-pre-wrap">
+        {post.content}
+      </p>
 
       {/* Actions */}
       <div className="mt-4 flex items-center gap-2">

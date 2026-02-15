@@ -30,16 +30,30 @@ export default function FeedPage() {
     if (error) {
       setErrorMsg(error.message);
     } else {
-      setPosts(data || []);
-
       const authorIds = (data || []).map((p) => p.user_id);
+
       try {
-        const map = await fetchPublicProfiles(authorIds);
+        const map = await fetchPublicProfiles(authorIds); // Map(id -> profile)
         setProfiles(map);
+
+        // ✅ приклеиваем автора к каждому посту
+        const dataWithAuthors = (data || []).map((p) => {
+          const a = map.get(p.user_id);
+          return {
+            ...p,
+            author_username: a?.username || "user",
+            author_full_name: a?.full_name || a?.username || "User",
+            author_avatar_path: a?.avatar_path || null,
+          };
+        });
+
+        setPosts(dataWithAuthors);
       } catch {
-        // ignore
+        // если профили не загрузились — просто показываем посты как раньше
+        setPosts(data || []);
       }
     }
+
     setLoading(false);
   }
 
@@ -48,15 +62,29 @@ export default function FeedPage() {
 
     const channel = supabase
       .channel("realtime-mini-blog")
-      .on("postgres_changes", { event: "*", schema: "public", table: "posts" }, () => debounceReload())
-      .on("postgres_changes", { event: "*", schema: "public", table: "comments" }, () => debounceReload())
-      .on("postgres_changes", { event: "*", schema: "public", table: "post_likes" }, () => debounceReload())
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "posts" },
+        () => debounceReload(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "comments" },
+        () => debounceReload(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "post_likes" },
+        () => debounceReload(),
+      )
       .subscribe();
 
     function debounceReload() {
       if (reloadTimer.current) clearTimeout(reloadTimer.current);
       reloadTimer.current = setTimeout(() => {
-        loadPosts().catch((e) => showToast(e.message || t("errorUpdate"), "error"));
+        loadPosts().catch((e) =>
+          showToast(e.message || t("errorUpdate"), "error"),
+        );
       }, 400);
     }
 
@@ -88,9 +116,14 @@ export default function FeedPage() {
       <Hero />
 
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-3xl font-extrabold tracking-tight">{t("allPosts")}</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight">
+          {t("allPosts")}
+        </h1>
 
-        <button onClick={loadPosts} className="px-3 py-2 rounded-2xl text-sm btn-soft">
+        <button
+          onClick={loadPosts}
+          className="px-3 py-2 rounded-2xl text-sm btn-soft"
+        >
           {t("refresh")}
         </button>
       </div>
@@ -98,12 +131,17 @@ export default function FeedPage() {
       {loading && <p className="mt-6 muted">{t("loading")}</p>}
 
       {errorMsg && (
-        <p className="mt-6 card rounded-2xl p-3" style={{ borderColor: "color-mix(in srgb, red 25%, var(--border))" }}>
+        <p
+          className="mt-6 card rounded-2xl p-3"
+          style={{ borderColor: "color-mix(in srgb, red 25%, var(--border))" }}
+        >
           {errorMsg}
         </p>
       )}
 
-      {!loading && !errorMsg && posts.length === 0 && <p className="mt-6 muted">{t("noPosts")}</p>}
+      {!loading && !errorMsg && posts.length === 0 && (
+        <p className="mt-6 muted">{t("noPosts")}</p>
+      )}
 
       <div className="mt-6 space-y-4">
         {posts.map((post) => (
@@ -118,4 +156,3 @@ export default function FeedPage() {
     </div>
   );
 }
-

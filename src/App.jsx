@@ -6,6 +6,8 @@ import ProfilePage from "./pages/ProfilePage";
 import EditorPage from "./pages/EditorPage";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
+import UserProfilePage from "./pages/UserProfilePage";
+
 
 export default function App() {
   return (
@@ -19,6 +21,8 @@ export default function App() {
         <Routes>
           <Route path="/" element={<FeedPage />} />
           <Route path="/auth" element={<AuthPage />} />
+          <Route path="/u/:username" element={<UserProfilePage />} />
+
 
           <Route
             path="/profile"
