@@ -24,34 +24,65 @@ export default function FeedPage() {
 
     const { data, error } = await supabase
       .from("posts")
-      .select(`*, comments(count)`,)
+      .select(`*, comments(count)`)
       .order("created_at", { ascending: false });
 
     if (error) {
       setErrorMsg(error.message);
-    } else {
-      const authorIds = (data || []).map((p) => p.user_id);
+      setLoading(false);
+      return;
+    }
 
-      try {
-        const map = await fetchPublicProfiles(authorIds); // Map(id -> profile)
-        setProfiles(map);
+    const rows = data || [];
+    const postIds = rows.map((p) => p.id);
+    const authorIds = rows.map((p) => p.user_id);
 
-        // ✅ приклеиваем автора к каждому посту
-        const dataWithAuthors = (data || []).map((p) => {
-          const a = map.get(p.user_id);
-          return {
-            ...p,
-            author_username: a?.username || "user",
-            author_full_name: a?.full_name || a?.username || "User",
-            author_avatar_path: a?.avatar_path || null,
-          };
-        });
+    // ✅ 1) Загружаем вложения одним запросом
+    let attachments = [];
+    if (postIds.length > 0) {
+      const { data: atts, error: attErr } = await supabase
+        .from("post_attachments")
+        .select("id, post_id, kind, url, name, position, created_at")
+        .in("post_id", postIds)
+        .order("position", { ascending: true })
+        .order("created_at", { ascending: true });
 
-        setPosts(dataWithAuthors);
-      } catch {
-        // если профили не загрузились — просто показываем посты как раньше
-        setPosts(data || []);
-      }
+      if (!attErr) attachments = atts || [];
+    }
+
+    // ✅ 2) Группируем вложения по post_id
+    const byPost = new Map();
+    for (const a of attachments) {
+      if (!byPost.has(a.post_id)) byPost.set(a.post_id, []);
+      byPost.get(a.post_id).push(a);
+    }
+
+    // ✅ 3) Загружаем профили авторов
+    try {
+      const map = await fetchPublicProfiles(authorIds); // Map(id -> profile)
+      setProfiles(map);
+
+      // ✅ 4) Приклеиваем автора + attachments к каждому посту
+      const dataWithAuthors = rows.map((p) => {
+        const a = map.get(p.user_id);
+        return {
+          ...p,
+          attachments: byPost.get(p.id) || [], // ✅ вот это нужно PostCard
+          author_username: a?.username || "user",
+          author_full_name: a?.full_name || a?.username || "User",
+          author_avatar_path: a?.avatar_path || null,
+        };
+      });
+
+      setPosts(dataWithAuthors);
+    } catch {
+      // если профили не загрузились — всё равно приклеим attachments
+      setPosts(
+        rows.map((p) => ({
+          ...p,
+          attachments: byPost.get(p.id) || [],
+        }))
+      );
     }
 
     setLoading(false);
@@ -65,26 +96,30 @@ export default function FeedPage() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "posts" },
-        () => debounceReload(),
+        () => debounceReload()
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "comments" },
-        () => debounceReload(),
+        () => debounceReload()
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "post_likes" },
-        () => debounceReload(),
+        () => debounceReload()
+      )
+      // ✅ важно: чтобы новые/удалённые вложения сразу обновлялись
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "post_attachments" },
+        () => debounceReload()
       )
       .subscribe();
 
     function debounceReload() {
       if (reloadTimer.current) clearTimeout(reloadTimer.current);
       reloadTimer.current = setTimeout(() => {
-        loadPosts().catch((e) =>
-          showToast(e.message || t("errorUpdate"), "error"),
-        );
+        loadPosts().catch((e) => showToast(e.message || t("errorUpdate"), "error"));
       }, 400);
     }
 
@@ -116,14 +151,9 @@ export default function FeedPage() {
       <Hero />
 
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-3xl font-extrabold tracking-tight">
-          {t("allPosts")}
-        </h1>
+        <h1 className="text-3xl font-extrabold tracking-tight">{t("allPosts")}</h1>
 
-        <button
-          onClick={loadPosts}
-          className="px-3 py-2 rounded-2xl text-sm btn-soft"
-        >
+        <button onClick={loadPosts} className="px-3 py-2 rounded-2xl text-sm btn-soft">
           {t("refresh")}
         </button>
       </div>
@@ -139,9 +169,7 @@ export default function FeedPage() {
         </p>
       )}
 
-      {!loading && !errorMsg && posts.length === 0 && (
-        <p className="mt-6 muted">{t("noPosts")}</p>
-      )}
+      {!loading && !errorMsg && posts.length === 0 && <p className="mt-6 muted">{t("noPosts")}</p>}
 
       <div className="mt-6 space-y-4">
         {posts.map((post) => (

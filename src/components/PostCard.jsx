@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import LikeButton from "./LikeButton";
 import Comments from "./Comments";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { useUi } from "../context/UiContext";
 
@@ -16,8 +16,7 @@ export default function PostCard({ post, onDelete, author }) {
   const [showComments, setShowComments] = useState(false);
 
   const avatarUrl = author?.avatar_path
-    ? supabase.storage.from("avatars").getPublicUrl(author.avatar_path).data
-        .publicUrl
+    ? supabase.storage.from("avatars").getPublicUrl(author.avatar_path).data.publicUrl
     : null;
 
   const authorName = author?.full_name || author?.username || "User";
@@ -49,11 +48,42 @@ export default function PostCard({ post, onDelete, author }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [post.id, user?.id]);
 
+  // ✅ Новая система вложений (post_attachments)
+  const { images, files, links } = useMemo(() => {
+    const atts = post.attachments || [];
+    return {
+      images: atts.filter((a) => a.kind === "image"),
+      files: atts.filter((a) => a.kind === "file"),
+      links: atts.filter((a) => a.kind === "link"),
+    };
+  }, [post.attachments]);
+
+  // ✅ Фоллбек: если где-то ещё остались старые поля posts.image_url/file_url/link_url
+  const legacyImages = useMemo(() => {
+    const out = [];
+    if (post.image_url) out.push({ id: "legacy-image", url: post.image_url });
+    return out;
+  }, [post.image_url]);
+
+  const legacyFiles = useMemo(() => {
+    const out = [];
+    if (post.file_url) out.push({ id: "legacy-file", url: post.file_url, name: post.file_name });
+    return out;
+  }, [post.file_url, post.file_name]);
+
+  const legacyLinks = useMemo(() => {
+    const out = [];
+    if (post.link_url) out.push({ id: "legacy-link", url: post.link_url });
+    return out;
+  }, [post.link_url]);
+
+  const showImages = images.length ? images : legacyImages;
+  const showFiles = files.length ? files : legacyFiles;
+  const showLinks = links.length ? links : legacyLinks;
+
   return (
     <article className="bg-white/80 dark:bg-zinc-900/60 border border-zinc-200/70 dark:border-zinc-800/70 rounded-3xl p-5 shadow-sm hover:shadow-md">
       <div className="flex items-start justify-between gap-4">
-        {/* Author block */}
-        {/* Author block */}
         <Link
           to={author?.username ? `/u/${author.username}` : "#"}
           className="flex items-start gap-3 hover:opacity-90"
@@ -63,11 +93,7 @@ export default function PostCard({ post, onDelete, author }) {
         >
           <div className="w-10 h-10 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-950/40 overflow-hidden flex items-center justify-center">
             {avatarUrl ? (
-              <img
-                src={avatarUrl}
-                alt="avatar"
-                className="w-full h-full object-cover"
-              />
+              <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
             ) : (
               <span className="text-xs text-zinc-500">🙂</span>
             )}
@@ -75,13 +101,9 @@ export default function PostCard({ post, onDelete, author }) {
 
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-semibold text-sm truncate">
-                {authorName}
-              </span>
+              <span className="font-semibold text-sm truncate">{authorName}</span>
               {author?.username ? (
-                <span className="text-xs text-zinc-500 truncate">
-                  @{author.username}
-                </span>
+                <span className="text-xs text-zinc-500 truncate">@{author.username}</span>
               ) : null}
             </div>
 
@@ -93,7 +115,6 @@ export default function PostCard({ post, onDelete, author }) {
           </div>
         </Link>
 
-        {/* Owner actions */}
         {isOwner && (
           <div className="flex gap-2">
             <Link
@@ -113,46 +134,65 @@ export default function PostCard({ post, onDelete, author }) {
       </div>
 
       {/* Content */}
-      <p className="text-zinc-800 dark:text-zinc-100 mt-3 whitespace-pre-wrap">
-        {post.content}
-      </p>
+      <p className="text-zinc-800 dark:text-zinc-100 mt-3 whitespace-pre-wrap">{post.content}</p>
 
-      {/* Attachments */}
-      {(post.image_url || post.link_url || post.file_url) && (
-        <div className="mt-3 space-y-2">
-          {post.image_url && (
-            <div className="mt-3 flex justify-center">
-              <div className="w-full max-w-[500px] aspect-square overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
-                <img
-                  src={post.image_url}
-                  alt="post"
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-              </div>
+      {/* ✅ Attachments (multi) */}
+      {(showImages.length > 0 || showFiles.length > 0 || showLinks.length > 0) && (
+        <div className="mt-3 space-y-3">
+          {/* Images grid */}
+          {showImages.length > 0 && (
+            <div className="grid gap-2 grid-cols-2 sm:grid-cols-3">
+              {showImages.slice(0, 6).map((img) => (
+                <button
+                  key={img.id}
+                  type="button"
+                  onClick={() => window.open(img.url, "_blank")}
+                  className="rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-black/10 hover:opacity-95"
+                  title="Open"
+                >
+                  <img
+                    src={img.url}
+                    alt=""
+                    className="w-full h-[160px] object-cover"
+                    loading="lazy"
+                  />
+                </button>
+              ))}
             </div>
           )}
 
-          {post.link_url && (
-            <a
-              href={post.link_url}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 text-sm underline text-zinc-700 dark:text-zinc-200"
-            >
-              🔗 {post.link_url}
-            </a>
+          {/* Links */}
+          {showLinks.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {showLinks.map((l) => (
+                <a
+                  key={l.id}
+                  href={l.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm border border-zinc-200 dark:border-zinc-800 bg-white/60 dark:bg-zinc-950/30 hover:bg-white/80 dark:hover:bg-zinc-950/50"
+                >
+                  🔗 <span className="max-w-[240px] truncate">{l.url}</span>
+                </a>
+              ))}
+            </div>
           )}
 
-          {post.file_url && (
-            <a
-              href={post.file_url}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/50 hover:bg-zinc-50 dark:hover:bg-zinc-900"
-            >
-              📎 {post.file_name || "Скачать файл"}
-            </a>
+          {/* Files */}
+          {showFiles.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {showFiles.map((f) => (
+                <a
+                  key={f.id}
+                  href={f.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm border border-zinc-200 dark:border-zinc-800 bg-white/60 dark:bg-zinc-950/30 hover:bg-white/80 dark:hover:bg-zinc-950/50"
+                >
+                  📎 <span className="max-w-[240px] truncate">{f.name || "Файл"}</span>
+                </a>
+              ))}
+            </div>
           )}
         </div>
       )}
