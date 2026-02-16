@@ -16,7 +16,8 @@ export default function PostCard({ post, onDelete, author }) {
   const [showComments, setShowComments] = useState(false);
 
   const avatarUrl = author?.avatar_path
-    ? supabase.storage.from("avatars").getPublicUrl(author.avatar_path).data.publicUrl
+    ? supabase.storage.from("avatars").getPublicUrl(author.avatar_path).data
+        .publicUrl
     : null;
 
   const authorName = author?.full_name || author?.username || "User";
@@ -67,7 +68,8 @@ export default function PostCard({ post, onDelete, author }) {
 
   const legacyFiles = useMemo(() => {
     const out = [];
-    if (post.file_url) out.push({ id: "legacy-file", url: post.file_url, name: post.file_name });
+    if (post.file_url)
+      out.push({ id: "legacy-file", url: post.file_url, name: post.file_name });
     return out;
   }, [post.file_url, post.file_name]);
 
@@ -95,7 +97,11 @@ export default function PostCard({ post, onDelete, author }) {
         >
           <div className="w-10 h-10 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-950/40 overflow-hidden flex items-center justify-center shrink-0">
             {avatarUrl ? (
-              <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
+              <img
+                src={avatarUrl}
+                alt="avatar"
+                className="w-full h-full object-cover"
+              />
             ) : (
               <span className="text-xs text-zinc-500">🙂</span>
             )}
@@ -103,9 +109,13 @@ export default function PostCard({ post, onDelete, author }) {
 
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap min-w-0">
-              <span className="font-semibold text-sm truncate">{authorName}</span>
+              <span className="font-semibold text-sm truncate">
+                {authorName}
+              </span>
               {author?.username ? (
-                <span className="text-xs text-zinc-500 truncate">@{author.username}</span>
+                <span className="text-xs text-zinc-500 truncate">
+                  @{author.username}
+                </span>
               ) : null}
             </div>
 
@@ -117,16 +127,17 @@ export default function PostCard({ post, onDelete, author }) {
 
         {/* Right (actions) */}
         {isOwner && (
-          <div className="flex gap-2 shrink-0">
+          <div className="flex flex-col sm:flex-row gap-2 shrink-0 w-[140px] sm:w-auto">
             <Link
               to={`/edit/${post.id}`}
-              className="px-3 py-2 text-sm rounded-2xl bg-zinc-900 text-white hover:bg-black dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100"
+              className="w-full sm:w-auto text-center px-3 py-2 text-sm rounded-2xl bg-zinc-900 text-white hover:bg-black dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100"
             >
               {t("edit")}
             </Link>
+
             <button
               onClick={() => onDelete?.(post.id)}
-              className="px-3 py-2 text-sm rounded-2xl bg-zinc-100 dark:bg-zinc-900/50 hover:bg-zinc-200 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800"
+              className="w-full sm:w-auto px-3 py-2 text-sm rounded-2xl bg-zinc-100 dark:bg-zinc-900/50 hover:bg-zinc-200 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800"
             >
               {t("delete")}
             </button>
@@ -145,7 +156,9 @@ export default function PostCard({ post, onDelete, author }) {
       </p>
 
       {/* ✅ Attachments (multi) */}
-      {(showImages.length > 0 || showFiles.length > 0 || showLinks.length > 0) && (
+      {(showImages.length > 0 ||
+        showFiles.length > 0 ||
+        showLinks.length > 0) && (
         <div className="mt-3 space-y-3">
           {/* Images grid */}
           {showImages.length > 0 && (
@@ -158,7 +171,12 @@ export default function PostCard({ post, onDelete, author }) {
                   className="rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-black/10 hover:opacity-95"
                   title="Open"
                 >
-                  <img src={img.url} alt="" className="w-full h-[160px] object-cover" loading="lazy" />
+                  <img
+                    src={img.url}
+                    alt=""
+                    className="w-full h-[160px] object-cover"
+                    loading="lazy"
+                  />
                 </button>
               ))}
             </div>
@@ -192,7 +210,10 @@ export default function PostCard({ post, onDelete, author }) {
                   rel="noreferrer"
                   className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm border border-zinc-200 dark:border-zinc-800 bg-white/60 dark:bg-zinc-950/30 hover:bg-white/80 dark:hover:bg-zinc-950/50"
                 >
-                  📎 <span className="max-w-[240px] truncate">{f.name || "Файл"}</span>
+                  📎{" "}
+                  <span className="max-w-[240px] truncate">
+                    {f.name || "Файл"}
+                  </span>
                 </a>
               ))}
             </div>
