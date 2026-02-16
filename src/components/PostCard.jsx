@@ -83,15 +83,17 @@ export default function PostCard({ post, onDelete, author }) {
 
   return (
     <article className="bg-white/80 dark:bg-zinc-900/60 border border-zinc-200/70 dark:border-zinc-800/70 rounded-3xl p-5 shadow-sm hover:shadow-md">
+      {/* Header */}
       <div className="flex items-start justify-between gap-4">
+        {/* Left (author) */}
         <Link
           to={author?.username ? `/u/${author.username}` : "#"}
-          className="flex items-start gap-3 hover:opacity-90"
+          className="flex items-start gap-3 hover:opacity-90 min-w-0 flex-1"
           onClick={(e) => {
             if (!author?.username) e.preventDefault();
           }}
         >
-          <div className="w-10 h-10 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-950/40 overflow-hidden flex items-center justify-center">
+          <div className="w-10 h-10 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-950/40 overflow-hidden flex items-center justify-center shrink-0">
             {avatarUrl ? (
               <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
             ) : (
@@ -100,7 +102,7 @@ export default function PostCard({ post, onDelete, author }) {
           </div>
 
           <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap min-w-0">
               <span className="font-semibold text-sm truncate">{authorName}</span>
               {author?.username ? (
                 <span className="text-xs text-zinc-500 truncate">@{author.username}</span>
@@ -110,13 +112,12 @@ export default function PostCard({ post, onDelete, author }) {
             <p className="text-xs text-zinc-500 mt-0.5">
               {new Date(post.created_at).toLocaleString()}
             </p>
-
-            <h2 className="text-lg font-semibold mt-2">{post.title}</h2>
           </div>
         </Link>
 
+        {/* Right (actions) */}
         {isOwner && (
-          <div className="flex gap-2">
+          <div className="flex gap-2 shrink-0">
             <Link
               to={`/edit/${post.id}`}
               className="px-3 py-2 text-sm rounded-2xl bg-zinc-900 text-white hover:bg-black dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-100"
@@ -133,8 +134,15 @@ export default function PostCard({ post, onDelete, author }) {
         )}
       </div>
 
-      {/* Content */}
-      <p className="text-zinc-800 dark:text-zinc-100 mt-3 whitespace-pre-wrap">{post.content}</p>
+      {/* ✅ Title full width */}
+      <h2 className="mt-4 w-full text-xl sm:text-2xl font-bold leading-tight break-words">
+        {post.title}
+      </h2>
+
+      {/* ✅ Content full width */}
+      <p className="mt-3 w-full text-base sm:text-lg leading-relaxed whitespace-pre-wrap break-words text-zinc-800 dark:text-zinc-100">
+        {post.content}
+      </p>
 
       {/* ✅ Attachments (multi) */}
       {(showImages.length > 0 || showFiles.length > 0 || showLinks.length > 0) && (
@@ -150,12 +158,7 @@ export default function PostCard({ post, onDelete, author }) {
                   className="rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-black/10 hover:opacity-95"
                   title="Open"
                 >
-                  <img
-                    src={img.url}
-                    alt=""
-                    className="w-full h-[160px] object-cover"
-                    loading="lazy"
-                  />
+                  <img src={img.url} alt="" className="w-full h-[160px] object-cover" loading="lazy" />
                 </button>
               ))}
             </div>

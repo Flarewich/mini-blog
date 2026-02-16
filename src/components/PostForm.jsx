@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useUi } from "../context/UiContext";
 
 export default function PostForm({
@@ -20,24 +20,49 @@ export default function PostForm({
   const [links, setLinks] = useState([]); // string[]
   const [linkInput, setLinkInput] = useState("");
 
+  // ✅ превью выбранных фото
+  const [imagePreviews, setImagePreviews] = useState([]); // { key, name, url }
+
+  useEffect(() => {
+    const urls = (imageFiles || []).map((file) => ({
+      key: `${file.name}:${file.size}:${file.lastModified}`,
+      name: file.name,
+      url: URL.createObjectURL(file),
+    }));
+
+    setImagePreviews(urls);
+
+    return () => {
+      urls.forEach((u) => URL.revokeObjectURL(u.url));
+    };
+  }, [imageFiles]);
+
+  function removeSelectedImageByKey(key) {
+    setImageFiles((arr) =>
+      arr.filter((f) => `${f.name}:${f.size}:${f.lastModified}` !== key)
+    );
+  }
+
   // ✅ существующие вложения (при редактировании)
   const [keptAttachments, setKeptAttachments] = useState(
-    () => initialAttachments || [],
+    () => initialAttachments || []
   );
 
   const allNewChips = useMemo(() => {
     const img = imageFiles.map((f) => ({
-      key: `img:${f.name}:${f.size}`,
+      key: `img:${f.name}:${f.size}:${f.lastModified}`,
       icon: "🖼",
       label: f.name,
       type: "new_image",
+      fileKey: `${f.name}:${f.size}:${f.lastModified}`,
     }));
 
     const fl = files.map((f) => ({
-      key: `file:${f.name}:${f.size}`,
+      key: `file:${f.name}:${f.size}:${f.lastModified}`,
       icon: "📎",
       label: f.name,
       type: "new_file",
+      fileKey: `${f.name}:${f.size}:${f.lastModified}`,
     }));
 
     const lk = links.map((l, i) => ({
@@ -57,10 +82,13 @@ export default function PostForm({
 
   function removeNewChip(chip) {
     if (chip.type === "new_image") {
-      // удаляем по имени (норм для UI; если хочешь идеально — по key)
-      setImageFiles((arr) => arr.filter((f) => f.name !== chip.label));
+      setImageFiles((arr) =>
+        arr.filter((f) => `${f.name}:${f.size}:${f.lastModified}` !== chip.fileKey)
+      );
     } else if (chip.type === "new_file") {
-      setFiles((arr) => arr.filter((f) => f.name !== chip.label));
+      setFiles((arr) =>
+        arr.filter((f) => `${f.name}:${f.size}:${f.lastModified}` !== chip.fileKey)
+      );
     } else if (chip.type === "new_link") {
       setLinks((arr) => arr.filter((_, i) => i !== chip.idx));
     }
@@ -133,13 +161,9 @@ export default function PostForm({
                 className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm border border-zinc-200 dark:border-zinc-800 bg-white/60 dark:bg-zinc-950/30"
                 title={a.url}
               >
-                <span>
-                  {a.kind === "image" ? "🖼" : a.kind === "file" ? "📎" : "🔗"}
-                </span>
+                <span>{a.kind === "image" ? "🖼" : a.kind === "file" ? "📎" : "🔗"}</span>
 
-                <span className="max-w-[220px] truncate">
-                  {a.name || a.url}
-                </span>
+                <span className="max-w-[220px] truncate">{a.name || a.url}</span>
 
                 <button
                   type="button"
@@ -158,6 +182,7 @@ export default function PostForm({
 
       {/* ✅ New attachments */}
       <div className="space-y-3">
+        {/* chips */}
         <div className="flex flex-wrap gap-2">
           {allNewChips.map((chip) => (
             <span
@@ -180,8 +205,9 @@ export default function PostForm({
           ))}
         </div>
 
+        {/* icon buttons */}
         <div className="flex items-center gap-3">
-          {/* 📷 Фото */}
+          {/* 🖼 Фото */}
           <label className="cursor-pointer inline-flex items-center justify-center w-11 h-11 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
             <span className="text-lg">🖼</span>
             <input
@@ -207,6 +233,34 @@ export default function PostForm({
           <span className="text-xs text-zinc-500">Можно выбрать несколько</span>
         </div>
 
+        {/* ✅ PREVIEW выбранных фото */}
+        {imagePreviews.length > 0 && (
+          <div className="mt-1 grid grid-cols-3 sm:grid-cols-4 gap-2">
+            {imagePreviews.map((p) => (
+              <div
+                key={p.key}
+                className="relative rounded-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-black/10"
+              >
+                <img
+                  src={p.url}
+                  alt={p.name}
+                  className="w-full h-24 object-cover"
+                  loading="lazy"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeSelectedImageByKey(p.key)}
+                  className="absolute top-1 right-1 w-7 h-7 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80"
+                  title="Удалить"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* links */}
         <div>
           <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-200">
             Ссылки (можно несколько)
