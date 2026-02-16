@@ -10,46 +10,69 @@ export default function NotificationsBell() {
 
   const unread = useMemo(() => items.filter((n) => !n.is_read).length, [items]);
 
+  // ✅ Загрузка уведомлений
   async function load() {
     if (!user?.id) return;
+
     const { data, error } = await supabase
       .from("notifications")
-      .select("id,type,is_read,created_at,post_id,actor_id")
+      .select("id,type,is_read,created_at,post_id,comment_id,sender_id,user_id")
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(30);
 
-    if (!error) setItems(data || []);
+    if (error) {
+      console.error("load notifications error:", error);
+      return;
+    }
+
+    setItems(data || []);
   }
 
+  // ✅ Одна нормальная markAllRead (update + локальный state)
   async function markAllRead() {
     if (!user?.id) return;
-    await supabase
+
+    const { error } = await supabase
       .from("notifications")
       .update({ is_read: true })
       .eq("user_id", user.id)
       .eq("is_read", false);
 
+    if (error) {
+      console.error("markAllRead error:", error);
+      return;
+    }
+
     setItems((prev) => prev.map((x) => ({ ...x, is_read: true })));
   }
 
   useEffect(() => {
-    load();
     if (!user?.id) return;
 
+    load();
+
+    // ✅ Фильтр подписки: получаем только уведомления для текущего user_id
     const ch = supabase
-      .channel("realtime-notifications")
+      .channel(`realtime-notifications:${user.id}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "notifications" },
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${user.id}`,
+        },
         (payload) => {
           const n = payload.new;
-          // добавляем сверху
           setItems((prev) => [n, ...prev].slice(0, 30));
         },
       )
       .subscribe();
 
-    return () => supabase.removeChannel(ch);
+    return () => {
+      supabase.removeChannel(ch);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
@@ -61,10 +84,7 @@ export default function NotificationsBell() {
     }
 
     document.addEventListener("mousedown", handleClickOutside);
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   if (!user) return null;
@@ -72,7 +92,14 @@ export default function NotificationsBell() {
   return (
     <div className="relative" ref={containerRef}>
       <button
-        onClick={() => setOpen((v) => !v)}
+        onClick={async () => {
+          setOpen((v) => {
+            const next = !v;
+            // если открываем — подгружаем свежие уведомления
+            if (!v) load();
+            return next;
+          });
+        }}
         className="relative w-10 h-10 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/50 hover:bg-zinc-50 dark:hover:bg-zinc-900 flex items-center justify-center"
         title="Notifications"
       >

@@ -3,7 +3,13 @@ import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { useUi } from "../context/UiContext";
 
-export default function LikeButton({ postId, likedByMe, likesCount, onChanged }) {
+export default function LikeButton({
+  postId,
+  postAuthorId,     // ✅ ДОБАВИЛИ
+  likedByMe,
+  likesCount,
+  onChanged,
+}) {
   const { user } = useAuth();
   const { showToast } = useToast();
   const { t } = useUi();
@@ -21,15 +27,34 @@ export default function LikeButton({ postId, likedByMe, likesCount, onChanged })
           .delete()
           .eq("post_id", postId)
           .eq("user_id", user.id);
+
         if (error) throw error;
         onChanged?.({ liked: false });
       } else {
-        const { error } = await supabase.from("post_likes").insert({
+        // ✅ 1) ставим лайк
+        const { error: likeError } = await supabase.from("post_likes").insert({
           post_id: postId,
           user_id: user.id,
         });
-        if (error) throw error;
+
+        if (likeError) throw likeError;
         onChanged?.({ liked: true });
+
+        // ✅ 2) создаём уведомление автору (если лайкаем НЕ себя)
+        if (postAuthorId && postAuthorId !== user.id) {
+          const { error: notifError } = await supabase
+            .from("notifications")
+            .insert({
+              user_id: postAuthorId,   // кому
+              sender_id: user.id,      // кто
+              type: "like",
+              post_id: postId,
+              is_read: false,
+            });
+
+          // ⚠️ не ломаем лайк, даже если уведомление не вставилось
+          if (notifError) console.error("notif insert error:", notifError);
+        }
       }
     } catch (err) {
       showToast(err.message || "Error", "error");
