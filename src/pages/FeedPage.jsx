@@ -24,7 +24,7 @@ export default function FeedPage() {
 
     const { data, error } = await supabase
       .from("posts")
-      .select("*")
+      .select(`*, comments(count)`,)
       .order("created_at", { ascending: false });
 
     if (error) {

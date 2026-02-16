@@ -22,7 +22,11 @@ export default function EditorPage() {
 
     (async () => {
       setErrorMsg("");
-      const { data, error } = await supabase.from("posts").select("*").eq("id", id).single();
+      const { data, error } = await supabase
+        .from("posts")
+        .select("*")
+        .eq("id", id)
+        .single();
       if (error) {
         setErrorMsg(error.message);
         return;
@@ -37,22 +41,81 @@ export default function EditorPage() {
     })();
   }, [isEdit, id, user?.id]);
 
-  async function submit({ title, content }) {
+  async function submit({ title, content, imageFile, anyFile, linkUrl }) {
     if (!title || !content) return;
 
     setLoading(true);
     setErrorMsg("");
 
     try {
+      async function uploadToStorage(file) {
+        const ext = file.name.split(".").pop();
+        const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("post-attachments")
+          .upload(path, file, {
+            upsert: false,
+            contentType: file.type,
+          });
+
+        if (uploadError) throw uploadError;
+
+        const { data } = supabase.storage
+          .from("post-attachments")
+          .getPublicUrl(path);
+
+        return data.publicUrl;
+      }
+
+      let image_url = null;
+      let file_url = null;
+      let file_name = null;
+
+      // 🔹 Проверка размера (чтобы не грузили 1GB)
+      if (imageFile && imageFile.size > 10 * 1024 * 1024) {
+        throw new Error("Фото слишком большое (макс 10MB)");
+      }
+
+      if (anyFile && anyFile.size > 20 * 1024 * 1024) {
+        throw new Error("Файл слишком большой (макс 20MB)");
+      }
+
+      // 🔹 Upload
+      if (imageFile) {
+        image_url = await uploadToStorage(imageFile);
+      }
+
+      if (anyFile) {
+        file_url = await uploadToStorage(anyFile);
+        file_name = anyFile.name;
+      }
+
       if (isEdit) {
-        const { error } = await supabase.from("posts").update({ title, content }).eq("id", id);
+        const { error } = await supabase
+          .from("posts")
+          .update({
+            title,
+            content,
+            image_url,
+            file_url,
+            file_name,
+            link_url: linkUrl || null,
+          })
+          .eq("id", id);
+
         if (error) throw error;
       } else {
         const { error } = await supabase.from("posts").insert({
           title,
           content,
           user_id: user.id,
+          image_url,
+          file_url,
+          file_name,
+          link_url: linkUrl || null,
         });
+
         if (error) throw error;
       }
 

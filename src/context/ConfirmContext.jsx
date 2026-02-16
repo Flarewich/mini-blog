@@ -46,8 +46,12 @@ export function ConfirmProvider({ children }) {
             className="absolute inset-0 bg-black/40"
             onClick={() => close(false)}
           />
-          <div className="relative w-full max-w-md rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-xl p-5">
-            <h3 className="text-lg font-bold">{state.title}</h3>
+          <div className="relative w-full max-w-md rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 shadow-xl p-5">
+
+            <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">
+              {state.title}
+            </h3>
+
             {state.message && (
               <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
                 {state.message}

@@ -117,6 +117,46 @@ export default function PostCard({ post, onDelete, author }) {
         {post.content}
       </p>
 
+      {/* Attachments */}
+      {(post.image_url || post.link_url || post.file_url) && (
+        <div className="mt-3 space-y-2">
+          {post.image_url && (
+            <div className="mt-3 flex justify-center">
+              <div className="w-full max-w-[500px] aspect-square overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800">
+                <img
+                  src={post.image_url}
+                  alt="post"
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              </div>
+            </div>
+          )}
+
+          {post.link_url && (
+            <a
+              href={post.link_url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 text-sm underline text-zinc-700 dark:text-zinc-200"
+            >
+              🔗 {post.link_url}
+            </a>
+          )}
+
+          {post.file_url && (
+            <a
+              href={post.file_url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 text-sm px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/50 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+            >
+              📎 {post.file_name || "Скачать файл"}
+            </a>
+          )}
+        </div>
+      )}
+
       {/* Actions */}
       <div className="mt-4 flex items-center gap-2">
         <LikeButton
@@ -133,7 +173,7 @@ export default function PostCard({ post, onDelete, author }) {
           onClick={() => setShowComments((v) => !v)}
           className="px-3 py-2 rounded-xl text-sm border border-zinc-200 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/50 hover:bg-zinc-50 dark:hover:bg-zinc-900"
         >
-          💬 {t("commentsBtn")}
+          💬 {post.comments?.[0]?.count || 0}
         </button>
       </div>
 
