@@ -3,6 +3,8 @@ import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useUi } from "../context/UiContext";
+import NotificationsBell from "./NotificationsBell";
+
 
 export default function Navbar() {
   const { user } = useAuth();
@@ -69,6 +71,9 @@ export default function Navbar() {
               {t("newPost")}
             </NavLink>
           )}
+
+          {user && <NotificationsBell />}
+
 
           {/* Profile dropdown */}
           {user ? (
