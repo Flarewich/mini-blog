@@ -5,7 +5,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useUi } from "../context/UiContext";
 import NotificationsBell from "./NotificationsBell";
 
-
 export default function Navbar() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -74,12 +73,14 @@ export default function Navbar() {
 
           {user && <NotificationsBell />}
 
-
           {/* Profile dropdown */}
           {user ? (
             <div className="relative" ref={profileMenuRef}>
               <button
-                className={pill + " flex items-center gap-2 hover:bg-zinc-50 dark:hover:bg-zinc-900"}
+                className={
+                  pill +
+                  " flex items-center gap-2 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                }
                 onClick={() => setProfileOpen((v) => !v)}
                 aria-haspopup="menu"
                 aria-expanded={profileOpen}
@@ -93,12 +94,15 @@ export default function Navbar() {
 
               {profileOpen && (
                 <div className="absolute right-0 mt-2 w-56 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-xl p-2">
-                  <NavLink to="/profile" className={({ isActive }) =>
-                    "block px-3 py-2 rounded-xl text-sm " +
-                    (isActive
-                      ? "bg-zinc-100 dark:bg-zinc-800/60"
-                      : "hover:bg-zinc-50 dark:hover:bg-zinc-800/40")
-                  }>
+                  <NavLink
+                    to="/profile"
+                    className={({ isActive }) =>
+                      "block px-3 py-2 rounded-xl text-sm " +
+                      (isActive
+                        ? "bg-zinc-100 dark:bg-zinc-800/60"
+                        : "hover:bg-zinc-50 dark:hover:bg-zinc-800/40")
+                    }
+                  >
                     {t("profile")}
                   </NavLink>
 
@@ -119,7 +123,11 @@ export default function Navbar() {
                   </select>
 
                   <button
-                    className={"mt-2 w-full " + pill + " hover:bg-zinc-50 dark:hover:bg-zinc-900"}
+                    className={
+                      "mt-2 w-full " +
+                      pill +
+                      " hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                    }
                     onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                   >
                     {t("theme")}: {theme === "dark" ? t("dark") : t("light")}
@@ -163,6 +171,9 @@ export default function Navbar() {
 
         {/* MOBILE */}
         <div className="md:hidden flex items-center gap-2">
+          {/* 🔔 Колокол на телефоне */}
+          {user && <NotificationsBell />}
+
           <button
             className="px-3 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/60"
             onClick={() => setMobileOpen((v) => !v)}
@@ -198,7 +209,11 @@ export default function Navbar() {
             )}
 
             <div className="flex gap-2 mt-2">
-              <select className={pill} value={lang} onChange={(e) => setLang(e.target.value)}>
+              <select
+                className={pill}
+                value={lang}
+                onChange={(e) => setLang(e.target.value)}
+              >
                 <option value="ru">RU</option>
                 <option value="ua">UA</option>
                 <option value="en">EN</option>

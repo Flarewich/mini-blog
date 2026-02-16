@@ -10,7 +10,6 @@ export default function NotificationsBell() {
 
   const unread = useMemo(() => items.filter((n) => !n.is_read).length, [items]);
 
-  // ✅ Загрузка уведомлений
   async function load() {
     if (!user?.id) return;
 
@@ -29,7 +28,6 @@ export default function NotificationsBell() {
     setItems(data || []);
   }
 
-  // ✅ Одна нормальная markAllRead (update + локальный state)
   async function markAllRead() {
     if (!user?.id) return;
 
@@ -52,7 +50,6 @@ export default function NotificationsBell() {
 
     load();
 
-    // ✅ Фильтр подписки: получаем только уведомления для текущего user_id
     const ch = supabase
       .channel(`realtime-notifications:${user.id}`)
       .on(
@@ -66,7 +63,7 @@ export default function NotificationsBell() {
         (payload) => {
           const n = payload.new;
           setItems((prev) => [n, ...prev].slice(0, 30));
-        },
+        }
       )
       .subscribe();
 
@@ -92,10 +89,9 @@ export default function NotificationsBell() {
   return (
     <div className="relative" ref={containerRef}>
       <button
-        onClick={async () => {
+        onClick={() => {
           setOpen((v) => {
             const next = !v;
-            // если открываем — подгружаем свежие уведомления
             if (!v) load();
             return next;
           });
@@ -112,7 +108,7 @@ export default function NotificationsBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-[320px] max-w-[90vw] rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-xl overflow-hidden z-50">
+        <div className="fixed right-3 top-16 w-[320px] max-w-[92vw] rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-xl overflow-hidden z-[9999]">
           <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-200 dark:border-zinc-800">
             <div className="font-semibold">Уведомления</div>
             <button
